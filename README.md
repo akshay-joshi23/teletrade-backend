@@ -29,6 +29,22 @@ Next steps:
 - UI-only: homeowner/pro enqueue/leave with client-side polling; navigates to `/room/{roomId}` when paired
 - Next: integrate LiveKit and replace polling with room join + token
 
+### LiveKit setup (keys & local run)
+
+1. Create a LiveKit Cloud project (or self-host).
+2. Generate an API Key and Secret in the LiveKit console.
+3. Create a `.env.local` file in this repo with:
+
+```
+LIVEKIT_URL=YOUR_LIVEKIT_WS_URL
+LIVEKIT_API_KEY=YOUR_API_KEY
+LIVEKIT_API_SECRET=YOUR_API_SECRET
+```
+
+4. Start the app: `npm run dev` and open `/room/test`. The app will request a token from `/api/livekit/token` and join the room.
+
+Note: never commit real secrets. `.env.example` lists required variables.
+
 ## Getting Started
 
 First, run the development server:
