@@ -89,7 +89,7 @@ function Controls({ roomId }: { roomId: string }) {
     try {
       await room.disconnect();
     } catch {}
-    window.location.href = `/summary/${roomId}`;
+    window.location.href = "/homeowner";
   };
   return (
     <div className="flex items-center gap-2">
