@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { TradePicker } from "@/components/TradePicker";
 import { ZipInput } from "@/components/ZipInput";
 import Button from "@/components/ui/Button";
@@ -22,7 +22,53 @@ export default function HomeownerPage() {
 
   const onConsult = () => {
     if (!validate()) return;
-    router.push("/room/demo-room");
+    setWaitingMsg("Waiting for an available pro…");
+    fetch("/api/match/enqueue", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ role: "homeowner", trade: selectedTrade }),
+    })
+      .then((r) => r.json())
+      .then((data: { status: "queued" | "paired"; roomId?: string }) => {
+        if (data.status === "paired" && data.roomId) {
+          router.push(`/room/${data.roomId}`);
+          return;
+        }
+        // start polling
+        startPolling();
+      })
+      .catch(() => setWaitingMsg("Waiting for an available pro…"));
+  };
+
+  const [waitingMsg, setWaitingMsg] = useState<string>("");
+  const pollRef = useRef<NodeJS.Timeout | null>(null);
+
+  const startPolling = () => {
+    if (pollRef.current) return;
+    pollRef.current = setInterval(() => {
+      fetch("/api/match/poll").then(async (r) => {
+        const data = (await r.json()) as { status: "waiting" | "paired"; roomId?: string };
+        if (data.status === "paired" && data.roomId) {
+          stopPolling();
+          router.push(`/room/${data.roomId}`);
+        }
+      });
+    }, 2000);
+  };
+
+  const stopPolling = () => {
+    if (pollRef.current) {
+      clearInterval(pollRef.current as unknown as number);
+      pollRef.current = null;
+    }
+  };
+
+  useEffect(() => () => stopPolling(), []);
+
+  const onCancel = () => {
+    stopPolling();
+    setWaitingMsg("");
+    fetch("/api/match/leave", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ role: "homeowner", trade: selectedTrade || undefined }) });
   };
 
   return (
@@ -60,6 +106,14 @@ export default function HomeownerPage() {
               <Button id="btn-instant-consult" data-action="enqueue" type="button" className="w-full" onClick={onConsult}>
                 Instant Consult
               </Button>
+              {waitingMsg && (
+                <div className="mt-3 flex items-center justify-between text-sm text-zinc-600 dark:text-zinc-300">
+                  <span>{waitingMsg}</span>
+                  <button type="button" className="underline" onClick={onCancel}>
+                    Cancel
+                  </button>
+                </div>
+              )}
             </div>
           </form>
         </div>

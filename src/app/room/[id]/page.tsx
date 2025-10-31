@@ -1,4 +1,15 @@
+"use client";
+import { useRouter } from "next/navigation";
+
 export default function RoomPage({ params }: { params: { id: string } }) {
+  const router = useRouter();
+  const end = async () => {
+    try {
+      await fetch("/api/match/leave", { method: "POST" });
+    } finally {
+      router.push("/homeowner");
+    }
+  };
   return (
     <main className="tt-section">
       <div className="max-w-5xl mx-auto px-4 space-y-6">
@@ -19,7 +30,7 @@ export default function RoomPage({ params }: { params: { id: string } }) {
             <div className="tt-card flex items-center justify-center gap-3">
               <button id="btn-mic" className="tt-btn-secondary">Mute</button>
               <button id="btn-cam" className="tt-btn-secondary">Camera</button>
-              <a id="btn-end" href="/homeowner" className="tt-btn-primary">End</a>
+              <button id="btn-end" className="tt-btn-primary" onClick={end}>End</button>
             </div>
           </div>
         </div>

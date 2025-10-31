@@ -1,12 +1,65 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import AvailabilityToggle from "@/components/AvailabilityToggle";
 import { TradePicker } from "@/components/TradePicker";
 import { type Trade } from "@/lib/types";
+import { useRouter } from "next/navigation";
 
 export default function ProPage() {
   const [available, setAvailable] = useState<boolean>(false);
   const [selectedTrade, setSelectedTrade] = useState<Trade | "">("");
+  const [statusMsg, setStatusMsg] = useState<string>("");
+  const pollRef = useRef<NodeJS.Timeout | null>(null);
+  const router = useRouter();
+
+  const startPolling = () => {
+    if (pollRef.current) return;
+    pollRef.current = setInterval(() => {
+      fetch("/api/match/poll").then(async (r) => {
+        const data = (await r.json()) as { status: "waiting" | "paired"; roomId?: string };
+        if (data.status === "paired" && data.roomId) {
+          stopPolling();
+          router.push(`/room/${data.roomId}`);
+        }
+      });
+    }, 2000);
+  };
+
+  const stopPolling = () => {
+    if (pollRef.current) {
+      clearInterval(pollRef.current as unknown as number);
+      pollRef.current = null;
+    }
+  };
+
+  useEffect(() => () => stopPolling(), []);
+
+  useEffect(() => {
+    if (!available) {
+      setStatusMsg("");
+      stopPolling();
+      fetch("/api/match/leave", { method: "POST" });
+      return;
+    }
+    if (!selectedTrade) {
+      setStatusMsg("Select a trade to go available.");
+      return;
+    }
+    setStatusMsg("You’re available. Waiting for a homeowner…");
+    fetch("/api/match/enqueue", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ role: "pro", trade: selectedTrade }),
+    })
+      .then((r) => r.json())
+      .then((data: { status: "queued" | "paired"; roomId?: string }) => {
+        if (data.status === "paired" && data.roomId) {
+          router.push(`/room/${data.roomId}`);
+        } else {
+          startPolling();
+        }
+      });
+  }, [available, selectedTrade]);
   return (
     <main className="tt-section">
       <div className="max-w-3xl mx-auto px-4 space-y-6">
@@ -38,10 +91,7 @@ export default function ProPage() {
 
         <section className="tt-card" id="pro-status">
           <h2 className="text-lg font-semibold mb-2">Status</h2>
-          <p className="text-sm text-zinc-600 dark:text-zinc-300">
-            {available ? "Available" : "Unavailable"}
-            {selectedTrade ? ` • ${selectedTrade}` : ""}
-          </p>
+          <p className="text-sm text-zinc-600 dark:text-zinc-300">{statusMsg || (available ? "Available" : "Unavailable")}</p>
         </section>
       </div>
     </main>

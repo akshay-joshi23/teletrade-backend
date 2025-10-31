@@ -22,6 +22,13 @@ Next steps:
 - Add LiveKit token issuance and video session wiring
 - Connect UI actions to API endpoints
 
+### New in this MVP pairing loop
+
+- Anonymous sessions via `tt_session` cookie (set by middleware)
+- In-memory pairing per trade using simple queues; poll endpoint to detect pairing
+- UI-only: homeowner/pro enqueue/leave with client-side polling; navigates to `/room/{roomId}` when paired
+- Next: integrate LiveKit and replace polling with room join + token
+
 ## Getting Started
 
 First, run the development server:
