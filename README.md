@@ -47,6 +47,12 @@ LIVEKIT_API_SECRET=YOUR_API_SECRET
 
 Note: never commit real secrets. `.env.example` lists required variables.
 
+### Post-call outcome (in-memory)
+
+- Pro can save an outcome and optional notes during/after the call.
+- Homeowner sees the summary at `/summary/{roomId}` after ending the call.
+- Outcomes are stored in memory only and are not persisted.
+
 ## Getting Started
 
 First, run the development server:

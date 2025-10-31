@@ -61,7 +61,7 @@ export default function VideoRoom({ roomId }: Props) {
         <div id="room-self" className="w-48">
           <SelfPreview />
         </div>
-        <Controls />
+        <Controls roomId={roomId} />
       </div>
     </LiveKitRoom>
   );
@@ -75,7 +75,7 @@ function SelfPreview() {
   );
 }
 
-function Controls() {
+function Controls({ roomId }: { roomId: string }) {
   const room = useRoomContext() as Room;
   const toggleMic = async () => {
     const enabled = room.localParticipant.isMicrophoneEnabled;
@@ -89,7 +89,7 @@ function Controls() {
     try {
       await room.disconnect();
     } catch {}
-    window.location.href = "/homeowner";
+    window.location.href = `/summary/${roomId}`;
   };
   return (
     <div className="flex items-center gap-2">
