@@ -19,7 +19,7 @@ export default function RoomPage({ params }: { params: { id: string } }) {
             <div className="tt-card flex items-center justify-center gap-3">
               <button id="btn-mic" className="tt-btn-secondary">Mute</button>
               <button id="btn-cam" className="tt-btn-secondary">Camera</button>
-              <button id="btn-end" className="tt-btn-primary">End</button>
+              <a id="btn-end" href="/homeowner" className="tt-btn-primary">End</a>
             </div>
           </div>
         </div>

@@ -1,7 +1,9 @@
 import * as React from "react";
+import { TRADES, type Trade } from "@/lib/types";
 
 type TradePickerProps = React.SelectHTMLAttributes<HTMLSelectElement> & {
   id?: string;
+  value?: "" | Trade;
 };
 
 export const TradePicker: React.FC<TradePickerProps> = ({ id = "trade-select", className = "", ...props }) => {
@@ -12,11 +14,11 @@ export const TradePicker: React.FC<TradePickerProps> = ({ id = "trade-select", c
       {...props}
     >
       <option value="">Select a trade</option>
-      <option value="plumber">Plumber</option>
-      <option value="electrician">Electrician</option>
-      <option value="hvac">HVAC</option>
-      <option value="appliance">Appliance</option>
-      <option value="handyman">Handyman</option>
+      {TRADES.map((t) => (
+        <option key={t} value={t}>
+          {t}
+        </option>
+      ))}
     </select>
   );
 };

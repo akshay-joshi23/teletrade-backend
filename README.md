@@ -1,5 +1,27 @@
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
+## TeleTrades Core (UI-only MVP)
+
+This repository contains the functional shell for TeleTrades (separate from the Lovable marketing shell). It includes:
+
+- App Router pages for `/homeowner`, `/pro`, and `/room/[id]`
+- Client-side navigation and minimal local UI state (no persistence, no external deps)
+- API route stubs that return 200/501 for now
+- Tailwind-only UI primitives (`components/ui`)
+
+Current scope (no logic):
+
+- Homeowner: choose trade and ZIP; clicking "Instant Consult" navigates to `/room/demo-room` when inputs are valid.
+- Pro: toggle availability and choose trade; status updates locally.
+- Room: placeholder layout; "End" returns to `/homeowner`.
+- API routes: `/api/health` → 200 `{ ok: true }`; others return 501 with TODO messages.
+
+Next steps:
+
+- Implement in-memory queue and matchmaking API (Redis later)
+- Add LiveKit token issuance and video session wiring
+- Connect UI actions to API endpoints
+
 ## Getting Started
 
 First, run the development server:
