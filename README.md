@@ -1,3 +1,5 @@
+Video powered by LiveKit. Token auth stored server-side. Do not expose keys in client code.
+
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
 ## TeleTrades Core (UI-only MVP)

@@ -59,6 +59,7 @@ export async function POST(req: NextRequest) {
       roomJoin: true,
       canPublish: true,
       canSubscribe: true,
+      canPublishData: true,
     },
   } as const;
 
