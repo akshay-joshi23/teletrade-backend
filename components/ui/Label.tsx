@@ -1,0 +1,8 @@
+"use client";
+import * as React from "react";
+
+export default function Label({ className = "", ...props }: React.LabelHTMLAttributes<HTMLLabelElement>) {
+  return <label className={`text-sm font-medium ${className}`} {...props} />;
+}
+
+

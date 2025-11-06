@@ -61,15 +61,15 @@ export default function ProPage() {
       });
   }, [available, selectedTrade, startPolling, stopPolling, router]);
   return (
-    <main className="tt-section">
-      <div className="max-w-3xl mx-auto px-4 space-y-6">
-        <header>
-          <h1 className="text-2xl sm:text-3xl font-bold">Pro Dashboard</h1>
-          <p className="text-zinc-600 dark:text-zinc-300">Set your availability and take instant consults.</p>
+    <main className="py-10 sm:py-16">
+      <div className="max-w-3xl mx-auto space-y-6">
+        <header className="mb-2">
+          <h1 className="text-4xl sm:text-5xl font-black tracking-tight">Pro Dashboard</h1>
+          <p className="mt-2 text-zinc-600 dark:text-zinc-300">Set your availability and take instant consults.</p>
         </header>
 
         <section className="grid gap-6 sm:grid-cols-2">
-          <div className="tt-card space-y-4">
+          <div className="rounded-2xl border border-black/10 bg-white shadow-lg/10 dark:bg-zinc-900/60 dark:border-white/10 p-6">
             <h2 className="text-lg font-semibold">Availability</h2>
             <AvailabilityToggle
               id="pro-availability-toggle"
@@ -79,7 +79,7 @@ export default function ProPage() {
             />
           </div>
 
-          <div className="tt-card space-y-4">
+          <div className="rounded-2xl border border-black/10 bg-white shadow-lg/10 dark:bg-zinc-900/60 dark:border-white/10 p-6">
             <h2 className="text-lg font-semibold">Trade</h2>
             <TradePicker
               id="pro-trade-select"
@@ -89,7 +89,7 @@ export default function ProPage() {
           </div>
         </section>
 
-        <section className="tt-card" id="pro-status">
+        <section className="rounded-2xl border border-black/10 bg-white shadow-lg/10 dark:bg-zinc-900/60 dark:border-white/10 p-6" id="pro-status">
           <h2 className="text-lg font-semibold mb-2">Status</h2>
         <p className="flex items-center text-sm text-zinc-600 dark:text-zinc-300">
           {available && statusMsg.includes("Waiting") && (

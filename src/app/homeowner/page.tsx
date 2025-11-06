@@ -72,15 +72,15 @@ export default function HomeownerPage() {
   };
 
   return (
-    <main className="tt-section">
-      <div className="max-w-2xl mx-auto px-4">
-        <header className="mb-8">
-          <h1 className="text-2xl sm:text-3xl font-bold">Homeowner</h1>
-          <p className="text-zinc-600 dark:text-zinc-300">Skip the first visit. Diagnose now. Fix faster.</p>
+    <main className="py-10 sm:py-16">
+      <div className="max-w-3xl mx-auto">
+        <header className="mb-8 sm:mb-10">
+          <h1 className="text-4xl sm:text-5xl font-black tracking-tight">Homeowner</h1>
+          <p className="mt-2 text-zinc-600 dark:text-zinc-300">Skip the first visit. Diagnose now. Fix faster.</p>
         </header>
 
-        <div className="tt-card">
-          <form className="space-y-4" onSubmit={(e) => e.preventDefault()}>
+        <div className="rounded-2xl border border-black/10 bg-white shadow-lg/10 dark:bg-zinc-900/60 dark:border-white/10 backdrop-blur supports-[backdrop-filter]:bg-zinc-900/50">
+          <form className="space-y-4 p-6" onSubmit={(e) => e.preventDefault()}>
             <div className="space-y-2">
               <label htmlFor="trade-select" className="text-sm font-medium">
                 Trade
@@ -103,8 +103,15 @@ export default function HomeownerPage() {
             </div>
 
             <div className="pt-2">
-              <Button id="btn-instant-consult" data-action="enqueue" type="button" className="w-full" onClick={onConsult}>
-                Instant Consult
+              <Button id="btn-instant-consult" data-action="enqueue" type="button" className="w-full" onClick={onConsult} aria-busy={!!waitingMsg}>
+                {waitingMsg ? (
+                  <span className="inline-flex items-center gap-2">
+                    <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/70 border-t-transparent" aria-hidden="true" />
+                    Connecting…
+                  </span>
+                ) : (
+                  "Instant Consult"
+                )}
               </Button>
               {waitingMsg && (
                 <div className="mt-3 flex items-center justify-between text-sm text-zinc-600 dark:text-zinc-300">

@@ -1,7 +1,9 @@
 import * as React from "react";
 
 export function Card({ className = "", ...props }: React.HTMLAttributes<HTMLDivElement>) {
-  return <div className={`tt-card ${className}`} {...props} />;
+  const base =
+    "rounded-2xl border border-black/10 bg-white shadow-lg/10 dark:bg-zinc-900/60 dark:border-white/10 backdrop-blur supports-[backdrop-filter]:bg-zinc-900/50";
+  return <div className={`${base} ${className}`} {...props} />;
 }
 
 export function CardHeader({ className = "", ...props }: React.HTMLAttributes<HTMLDivElement>) {
