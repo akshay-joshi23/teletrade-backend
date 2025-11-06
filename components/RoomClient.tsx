@@ -9,6 +9,7 @@ import {
   ControlBar,
 } from "@livekit/components-react";
 import { Track } from "livekit-client";
+import { getBrowserLiveKitUrl } from "@/lib/env";
 
 type Props = { roomId: string; role: "homeowner" | "pro" };
 
@@ -27,7 +28,8 @@ function VideoGrid() {
 export default function RoomClient({ roomId, role }: Props) {
   const [token, setToken] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
-  const serverUrl = process.env.NEXT_PUBLIC_LIVEKIT_URL;
+  // Read from helper to surface explicit error if missing
+  const serverUrl = getBrowserLiveKitUrl();
 
   useEffect(() => {
     (async () => {

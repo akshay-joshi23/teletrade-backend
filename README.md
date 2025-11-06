@@ -30,6 +30,7 @@ Notes:
    - `LIVEKIT_URL`
    - `LIVEKIT_API_KEY`
    - `LIVEKIT_API_SECRET`
+   - `NEXT_PUBLIC_LIVEKIT_URL` (same LiveKit edge URL; required by the browser)
 2. Local run:
    - `npm install`
    - `npm run dev`
@@ -37,6 +38,9 @@ Notes:
    - Deploy this repo to Vercel
 4. Connect marketing:
    - Update Lovable CTAs to `/homeowner` and `/pro`
+
+Health check:
+- Visit `/api/health` to verify envs at runtime. It returns commit info and boolean presence for `LIVEKIT_URL`, `LIVEKIT_API_KEY`, `LIVEKIT_API_SECRET`, and `NEXT_PUBLIC_LIVEKIT_URL`.
 
 ### LiveKit setup (keys & local run)
 
