@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useMemo, useState } from "react";
-import { LiveKitRoom, GridLayout, ParticipantTile, useRoomContext, useTracks } from "@livekit/components-react";
+import { LiveKitRoom, GridLayout, ParticipantTile, useRoomContext, useTracks, RoomAudioRenderer, ControlBar } from "@livekit/components-react";
 import { useRouter } from "next/navigation";
 import type { Room } from "livekit-client";
 import { Track } from "livekit-client";
@@ -42,9 +42,12 @@ export default function VideoRoom({ roomId, role }: Props) {
     typeof window !== "undefined" && window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches,
   []);
 
-  // Provide required tracks to GridLayout; matches LiveKit recommended usage.
-  const allTracks = useTracks([Track.Source.Camera, Track.Source.ScreenShare]);
-  const remoteTracks = allTracks.filter((t) => !t.participant.isLocal);
+  // Subscribe to camera/screen tracks; render placeholders until media arrives.
+  // Keep hooks above early returns (Rules of Hooks).
+  const tracks = useTracks([
+    { source: Track.Source.Camera, withPlaceholder: true },
+    { source: Track.Source.ScreenShare, withPlaceholder: true },
+  ]);
 
   if (loading)
     return (
@@ -69,30 +72,22 @@ export default function VideoRoom({ roomId, role }: Props) {
       className="space-y-4"
       style={{ animation: prefersReducedMotion ? "none" : undefined }}
     >
+      {/* Required to play remote audio due to browser autoplay policies */}
+      <RoomAudioRenderer />
+
       <div id="room-remote" className="w-full">
-        <GridLayout tracks={remoteTracks} className="grid gap-2">
+        <GridLayout tracks={tracks} className="grid gap-2" style={{ height: "70vh" }}>
           <ParticipantTile />
         </GridLayout>
       </div>
-      <div className="flex items-center gap-3">
-        <div id="room-self" className="w-48">
-          <SelfPreview />
-        </div>
-        <Controls roomId={roomId} />
-      </div>
+      {/* Basic media controls; keep existing End Call for redirect */}
+      <ControlBar variation="minimal" />
+      <Controls roomId={roomId} />
     </LiveKitRoom>
   );
 }
 
-function SelfPreview() {
-  const localCamTracks = useTracks([Track.Source.Camera], { onlySubscribed: false });
-  const localRef = localCamTracks.find((t) => t.participant.isLocal);
-  return (
-    <div className="rounded-lg overflow-hidden border">
-      {localRef ? <ParticipantTile trackRef={localRef} /> : null}
-    </div>
-  );
-}
+ 
 
 function Controls({ roomId }: { roomId: string }) {
   const room = useRoomContext() as Room;
