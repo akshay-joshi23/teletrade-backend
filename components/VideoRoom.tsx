@@ -1,8 +1,9 @@
 "use client";
 import { useEffect, useMemo, useState } from "react";
-import { LiveKitRoom, GridLayout, ParticipantTile, useRoomContext } from "@livekit/components-react";
+import { LiveKitRoom, GridLayout, ParticipantTile, useRoomContext, useTracks } from "@livekit/components-react";
 import { useRouter } from "next/navigation";
 import type { Room } from "livekit-client";
+import { Track } from "livekit-client";
 
 type Props = { roomId: string; role?: "homeowner" | "pro" };
 
@@ -54,6 +55,10 @@ export default function VideoRoom({ roomId, role }: Props) {
   if (error) return <div className="text-center text-red-600">{error}</div>;
   if (!token || !serverUrl) return <div className="text-center text-red-600">Missing LiveKit config</div>;
 
+  // Provide required tracks to GridLayout; matches LiveKit recommended usage.
+  const allTracks = useTracks([Track.Source.Camera, Track.Source.ScreenShare]);
+  const remoteTracks = allTracks.filter((t) => !t.participant.isLocal);
+
   return (
     <LiveKitRoom
       serverUrl={serverUrl}
@@ -65,7 +70,7 @@ export default function VideoRoom({ roomId, role }: Props) {
       style={{ animation: prefersReducedMotion ? "none" : undefined }}
     >
       <div id="room-remote" className="w-full">
-        <GridLayout className="grid gap-2">
+        <GridLayout tracks={remoteTracks} className="grid gap-2">
           <ParticipantTile />
         </GridLayout>
       </div>
@@ -80,9 +85,11 @@ export default function VideoRoom({ roomId, role }: Props) {
 }
 
 function SelfPreview() {
+  const localCamTracks = useTracks([Track.Source.Camera], { onlySubscribed: false });
+  const localRef = localCamTracks.find((t) => t.participant.isLocal);
   return (
     <div className="rounded-lg overflow-hidden border">
-      <ParticipantTile isLocal participant={undefined as never} />
+      {localRef ? <ParticipantTile trackRef={localRef} /> : null}
     </div>
   );
 }
