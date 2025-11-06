@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useMemo, useState } from "react";
 import { LiveKitRoom, GridLayout, ParticipantTile, useRoomContext } from "@livekit/components-react";
+import { useRouter } from "next/navigation";
 import type { Room } from "livekit-client";
 
 type Props = { roomId: string; role?: "homeowner" | "pro" };
@@ -88,6 +89,7 @@ function SelfPreview() {
 
 function Controls({ roomId }: { roomId: string }) {
   const room = useRoomContext() as Room;
+  const router = useRouter();
   const toggleMic = async () => {
     const enabled = room.localParticipant.isMicrophoneEnabled;
     await room.localParticipant.setMicrophoneEnabled(!enabled);
@@ -100,7 +102,7 @@ function Controls({ roomId }: { roomId: string }) {
     try {
       await room.disconnect();
     } catch {}
-    window.location.href = `/summary/${roomId}`;
+    router.push(`/summary/${roomId}`);
   };
   return (
     <div className="flex items-center gap-2">
@@ -110,7 +112,7 @@ function Controls({ roomId }: { roomId: string }) {
       <button id="btn-cam" className="tt-btn-secondary" onClick={toggleCam}>
         Camera
       </button>
-      <button id="btn-end" className="tt-btn-primary" onClick={leave}>
+      <button id="btn-end" type="button" className="tt-btn-primary" onClick={leave}>
         End Call
       </button>
     </div>
