@@ -35,9 +35,11 @@ export default function RoomClient({ roomId, role }: Props) {
         // 1) Resolve LiveKit URL for the browser
         const envUrl = process.env.NEXT_PUBLIC_LIVEKIT_URL;
         if (envUrl) {
+          console.log("[Room] Using NEXT_PUBLIC_LIVEKIT_URL:", envUrl);
           setServerUrl(envUrl);
         } else {
           const cfg = await fetch("/api/livekit/config").then((r) => r.json());
+          console.log("[Room] /api/livekit/config:", cfg);
           if (!cfg?.ok || !cfg?.serverUrl) {
             throw new Error("NEXT_PUBLIC_LIVEKIT_URL is missing and /api/livekit/config returned no URL");
           }
