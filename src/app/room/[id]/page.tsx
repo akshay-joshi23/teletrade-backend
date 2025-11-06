@@ -1,6 +1,7 @@
 import dynamic from "next/dynamic";
 const VideoRoom = dynamic(() => import("@/components/VideoRoom"), { ssr: false });
 const OutcomePanel = dynamic(() => import("@/components/OutcomePanel"), { ssr: false });
+import ErrorBoundary from "@/components/ErrorBoundary";
 
 export default function RoomPage({
   params,
@@ -19,10 +20,12 @@ export default function RoomPage({
           <h1 className="text-2xl sm:text-3xl font-bold">Room: {id}</h1>
           <p className="text-zinc-600 dark:text-zinc-300">You’re connected.</p>
         </header>
-        <div className="space-y-4">
-          <VideoRoom roomId={id} role={role} />
-          <OutcomePanel roomId={id} role={role} />
-        </div>
+        <ErrorBoundary>
+          <div className="space-y-4">
+            <VideoRoom roomId={id} role={role} />
+            <OutcomePanel roomId={id} role={role} />
+          </div>
+        </ErrorBoundary>
       </div>
     </main>
   );

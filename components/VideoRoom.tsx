@@ -16,6 +16,15 @@ export default function VideoRoom({ roomId, role }: Props) {
   useEffect(() => {
     let active = true;
     setLoading(true);
+    // Pre-warm permissions so camera/mic prompts happen before LiveKit joins.
+    // This reduces initial black tiles; ignore if blocked.
+    try {
+      if (typeof navigator !== "undefined" && navigator.mediaDevices?.getUserMedia) {
+        navigator.mediaDevices.getUserMedia({ audio: true, video: true }).catch(() => {
+          // Intentionally ignored; user can enable via ControlBar later
+        });
+      }
+    } catch {}
     const headers: Record<string, string> = { "Content-Type": "application/json" };
     if (role) headers["x-tt-role"] = role;
     fetch("/api/livekit/token", {
@@ -70,6 +79,7 @@ export default function VideoRoom({ roomId, role }: Props) {
       video
       audio
       className="space-y-4"
+      data-lk-theme="default"
       style={{ animation: prefersReducedMotion ? "none" : undefined }}
     >
       {/* Required to play remote audio due to browser autoplay policies */}
