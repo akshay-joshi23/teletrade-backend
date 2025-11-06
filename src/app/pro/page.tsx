@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import AvailabilityToggle from "@/components/AvailabilityToggle";
 import { TradePicker } from "@/components/TradePicker";
 import { type Trade } from "@/lib/types";
@@ -12,7 +12,14 @@ export default function ProPage() {
   const pollRef = useRef<NodeJS.Timeout | null>(null);
   const router = useRouter();
 
-  const startPolling = () => {
+  const stopPolling = useCallback(() => {
+    if (pollRef.current) {
+      clearInterval(pollRef.current as unknown as number);
+      pollRef.current = null;
+    }
+  }, []);
+
+  const startPolling = useCallback(() => {
     if (pollRef.current) return;
     pollRef.current = setInterval(() => {
       fetch("/api/match/poll").then(async (r) => {
@@ -23,16 +30,9 @@ export default function ProPage() {
         }
       });
     }, 2000);
-  };
+  }, [router, stopPolling]);
 
-  const stopPolling = () => {
-    if (pollRef.current) {
-      clearInterval(pollRef.current as unknown as number);
-      pollRef.current = null;
-    }
-  };
-
-  useEffect(() => () => stopPolling(), []);
+  useEffect(() => () => stopPolling(), [stopPolling]);
 
   useEffect(() => {
     if (!available) {
@@ -59,7 +59,7 @@ export default function ProPage() {
           startPolling();
         }
       });
-  }, [available, selectedTrade]);
+  }, [available, selectedTrade, startPolling, stopPolling, router]);
   return (
     <main className="tt-section">
       <div className="max-w-3xl mx-auto px-4 space-y-6">

@@ -34,7 +34,7 @@ export default function VideoRoom({ roomId, role }: Props) {
     return () => {
       active = false;
     };
-  }, [roomId]);
+  }, [roomId, role]);
 
   const prefersReducedMotion = useMemo(() =>
     typeof window !== "undefined" && window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches,

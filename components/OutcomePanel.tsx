@@ -28,9 +28,10 @@ export default function OutcomePanel({ roomId, role }: Props) {
       if (!r.ok) throw new Error("Failed to save");
       setMsg("Outcome saved.");
       setStatus("success");
-    } catch (e) {
-      setMsg("Failed to save outcome.");
+    } catch (err) {
+      console.error(err);
       setStatus("error");
+      setMsg(err instanceof Error ? err.message : "Failed to save outcome");
     } finally {
       setLoading(false);
     }
