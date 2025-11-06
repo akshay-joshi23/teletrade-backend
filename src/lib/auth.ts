@@ -1,26 +1,41 @@
 import GoogleProvider from "next-auth/providers/google";
-import { PrismaAdapter } from "@next-auth/prisma-adapter";
+import type { NextAuthOptions } from "next-auth";
 import { prisma } from "@/lib/prisma";
 
-export const authOptions = {
-  adapter: PrismaAdapter(prisma),
-  providers: [
-    GoogleProvider({
-      clientId: process.env.GOOGLE_CLIENT_ID!,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
-    }),
-  ],
-  session: { strategy: "database" as const },
-  callbacks: {
-    async session({ session, user }: any) {
-      if (session?.user) {
-        (session.user as any).id = user.id;
-        (session.user as any).role = (user as any).role;
-      }
-      return session;
+// Optional adapter import (guarded) so build works even if adapter isn't installed/usable
+let PrismaAdapterOptional: any = null;
+try {
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  PrismaAdapterOptional = require("@next-auth/prisma-adapter").PrismaAdapter;
+} catch {}
+
+export function buildAuthOptions(prismaClient?: any): NextAuthOptions {
+  const useDb = !!process.env.DATABASE_URL && !!prismaClient && !!PrismaAdapterOptional;
+
+  return {
+    providers: [
+      GoogleProvider({
+        clientId: process.env.GOOGLE_CLIENT_ID!,
+        clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+      }),
+    ],
+    // Default to JWT so deploy works even if DB isn’t ready
+    session: { strategy: (useDb ? "database" : "jwt") as any },
+    ...(useDb ? { adapter: PrismaAdapterOptional!(prismaClient) } : {}),
+    callbacks: {
+      async session({ session, user, token }: any) {
+        if (session?.user) {
+          (session.user as any).id = user?.id ?? token?.sub ?? null;
+          (session.user as any).role = (user as any)?.role ?? (token as any)?.role ?? null;
+        }
+        return session;
+      },
     },
-  },
-  pages: {},
-} as const;
+    pages: {},
+  } satisfies NextAuthOptions;
+}
+
+// Export a default options object for convenience
+export const authOptions = buildAuthOptions(prisma);
 
 
