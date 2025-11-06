@@ -9,7 +9,6 @@ import {
   ControlBar,
 } from "@livekit/components-react";
 import { Track } from "livekit-client";
-import { getBrowserLiveKitUrl } from "@/lib/env";
 
 type Props = { roomId: string; role: "homeowner" | "pro" };
 
@@ -27,14 +26,23 @@ function VideoGrid() {
 
 export default function RoomClient({ roomId, role }: Props) {
   const [token, setToken] = useState<string | null>(null);
+  const [serverUrl, setServerUrl] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
-  // Read from helper to surface explicit error if missing
-  const serverUrl = getBrowserLiveKitUrl();
 
   useEffect(() => {
     (async () => {
       try {
-        if (!serverUrl) throw new Error("NEXT_PUBLIC_LIVEKIT_URL is missing");
+        // 1) Resolve LiveKit URL for the browser
+        const envUrl = process.env.NEXT_PUBLIC_LIVEKIT_URL;
+        if (envUrl) {
+          setServerUrl(envUrl);
+        } else {
+          const cfg = await fetch("/api/livekit/config").then((r) => r.json());
+          if (!cfg?.ok || !cfg?.serverUrl) {
+            throw new Error("NEXT_PUBLIC_LIVEKIT_URL is missing and /api/livekit/config returned no URL");
+          }
+          setServerUrl(cfg.serverUrl as string);
+        }
 
         // Pre-prompt permissions (don’t crash if blocked)
         try {
@@ -62,7 +70,7 @@ export default function RoomClient({ roomId, role }: Props) {
         setErr(e instanceof Error ? e.message : "Failed to initialize room");
       }
     })();
-  }, [roomId, role, serverUrl]);
+  }, [roomId, role]);
 
   if (err) {
     return (
@@ -74,7 +82,7 @@ export default function RoomClient({ roomId, role }: Props) {
       </div>
     );
   }
-  if (!token) return <div className="tt-card">Connecting… allow camera & mic when prompted.</div>;
+  if (!serverUrl || !token) return <div className="tt-card">Connecting… allow camera & mic when prompted.</div>;
 
   return (
     <LiveKitRoom
