@@ -42,6 +42,10 @@ export default function VideoRoom({ roomId, role }: Props) {
     typeof window !== "undefined" && window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches,
   []);
 
+  // Provide required tracks to GridLayout; matches LiveKit recommended usage.
+  const allTracks = useTracks([Track.Source.Camera, Track.Source.ScreenShare]);
+  const remoteTracks = allTracks.filter((t) => !t.participant.isLocal);
+
   if (loading)
     return (
       <div className="flex items-center justify-center gap-2 text-center">
@@ -54,10 +58,6 @@ export default function VideoRoom({ roomId, role }: Props) {
     );
   if (error) return <div className="text-center text-red-600">{error}</div>;
   if (!token || !serverUrl) return <div className="text-center text-red-600">Missing LiveKit config</div>;
-
-  // Provide required tracks to GridLayout; matches LiveKit recommended usage.
-  const allTracks = useTracks([Track.Source.Camera, Track.Source.ScreenShare]);
-  const remoteTracks = allTracks.filter((t) => !t.participant.isLocal);
 
   return (
     <LiveKitRoom
