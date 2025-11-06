@@ -2,34 +2,41 @@ Video powered by LiveKit. Token auth stored server-side. Do not expose keys in c
 
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
-## TeleTrades Core (UI-only MVP)
+## TeleTrade Core (MVP)
 
-This repository contains the functional shell for TeleTrades (separate from the Lovable marketing shell). It includes:
+This repository contains the functional app for TeleTrade (separate from the Lovable marketing site). It includes:
 
 - App Router pages for `/homeowner`, `/pro`, and `/room/[id]`
-- Client-side navigation and minimal local UI state (no persistence, no external deps)
-- API route stubs that return 200/501 for now
+- Client-side navigation and minimal local UI state
+- API routes for matchmaking, LiveKit token issuance, and outcome save/summary
 - Tailwind-only UI primitives (`components/ui`)
 
-Current scope (no logic):
+Current scope:
 
-- Homeowner: choose trade and ZIP; clicking "Instant Consult" navigates to `/room/demo-room` when inputs are valid.
-- Pro: toggle availability and choose trade; status updates locally.
-- Room: placeholder layout; "End" returns to `/homeowner`.
-- API routes: `/api/health` → 200 `{ ok: true }`; others return 501 with TODO messages.
-
-Next steps:
-
-- Implement in-memory queue and matchmaking API (Redis later)
-- Add LiveKit token issuance and video session wiring
-- Connect UI actions to API endpoints
-
-### New in this MVP pairing loop
-
-- Anonymous sessions via `tt_session` cookie (set by middleware)
+- Anonymous sessions via `tt_session` cookie (middleware)
 - In-memory pairing per trade using simple queues; poll endpoint to detect pairing
-- UI-only: homeowner/pro enqueue/leave with client-side polling; navigates to `/room/{roomId}` when paired
-- Next: integrate LiveKit and replace polling with room join + token
+- LiveKit token issuance with participant labels (HO-xxxx/PRO-xxxx)
+- Video room join via `/room/{roomId}`
+- Outcome save (pro) and homeowner summary at `/summary/{roomId}`
+
+Notes:
+
+- Matchmaking and outcomes are in-memory only (non-persistent)
+- For persistence, swap to Redis/DB in a future iteration
+
+### Deploy checklist (Vercel)
+
+1. Environment variables:
+   - `LIVEKIT_URL`
+   - `LIVEKIT_API_KEY`
+   - `LIVEKIT_API_SECRET`
+2. Local run:
+   - `npm install`
+   - `npm run dev`
+3. Deploy:
+   - Deploy this repo to Vercel
+4. Connect marketing:
+   - Update Lovable CTAs to `/homeowner` and `/pro`
 
 ### LiveKit setup (keys & local run)
 

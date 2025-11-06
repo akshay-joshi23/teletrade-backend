@@ -3,9 +3,9 @@ import { useEffect, useMemo, useState } from "react";
 import { LiveKitRoom, GridLayout, ParticipantTile, useRoomContext } from "@livekit/components-react";
 import type { Room } from "livekit-client";
 
-type Props = { roomId: string };
+type Props = { roomId: string; role?: "homeowner" | "pro" };
 
-export default function VideoRoom({ roomId }: Props) {
+export default function VideoRoom({ roomId, role }: Props) {
   const [token, setToken] = useState<string | null>(null);
   const [serverUrl, setServerUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -14,9 +14,11 @@ export default function VideoRoom({ roomId }: Props) {
   useEffect(() => {
     let active = true;
     setLoading(true);
+    const headers: Record<string, string> = { "Content-Type": "application/json" };
+    if (role) headers["x-tt-role"] = role;
     fetch("/api/livekit/token", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers,
       body: JSON.stringify({ roomId }),
     })
       .then(async (r) => {
@@ -38,7 +40,16 @@ export default function VideoRoom({ roomId }: Props) {
     typeof window !== "undefined" && window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches,
   []);
 
-  if (loading) return <div className="text-center">Connecting…</div>;
+  if (loading)
+    return (
+      <div className="flex items-center justify-center gap-2 text-center">
+        <span
+          className="inline-block h-5 w-5 animate-spin rounded-full border-2 border-zinc-400 border-t-transparent"
+          aria-hidden="true"
+        />
+        <span>Connecting…</span>
+      </div>
+    );
   if (error) return <div className="text-center text-red-600">{error}</div>;
   if (!token || !serverUrl) return <div className="text-center text-red-600">Missing LiveKit config</div>;
 
@@ -89,7 +100,7 @@ function Controls({ roomId }: { roomId: string }) {
     try {
       await room.disconnect();
     } catch {}
-    window.location.href = "/homeowner";
+    window.location.href = `/summary/${roomId}`;
   };
   return (
     <div className="flex items-center gap-2">
@@ -100,7 +111,7 @@ function Controls({ roomId }: { roomId: string }) {
         Camera
       </button>
       <button id="btn-end" className="tt-btn-primary" onClick={leave}>
-        End
+        End Call
       </button>
     </div>
   );

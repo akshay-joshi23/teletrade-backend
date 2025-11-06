@@ -4,7 +4,7 @@ export type Role = "homeowner" | "pro";
 export type SessionId = string;
 
 type Queue = { homeowners: SessionId[]; pros: SessionId[] };
-type Pair = { roomId: string; a: SessionId; b: SessionId; trade: Trade; createdAt: number };
+export type Pair = { roomId: string; a: SessionId; b: SessionId; trade: Trade; createdAt: number };
 
 const queues = new Map<Trade, Queue>();
 for (const t of TRADES) queues.set(t, { homeowners: [], pros: [] });
@@ -65,6 +65,10 @@ export function clearPair(sessionId: SessionId) {
   if (!p) return;
   pairsBySession.delete(p.a);
   pairsBySession.delete(p.b);
+}
+
+export function getPairForSession(sessionId: SessionId): Pair | null {
+  return pairsBySession.get(sessionId) ?? null;
 }
 
 

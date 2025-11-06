@@ -1,21 +1,24 @@
 "use client";
 import { useState } from "react";
 
-type Props = { roomId: string };
+type Props = { roomId: string; role?: "homeowner" | "pro" };
 
-export default function OutcomePanel({ roomId }: Props) {
+export default function OutcomePanel({ roomId, role }: Props) {
   const [outcome, setOutcome] = useState<string>("");
   const [notes, setNotes] = useState<string>("");
   const [msg, setMsg] = useState<string>("");
   const [loading, setLoading] = useState(false);
+  const [status, setStatus] = useState<"idle" | "success" | "error">("idle");
 
   const onSave = async () => {
     if (!outcome) {
       setMsg("Select an outcome.");
+      setStatus("error");
       return;
     }
     setLoading(true);
     setMsg("");
+    setStatus("idle");
     try {
       const r = await fetch("/api/room/outcome", {
         method: "POST",
@@ -24,16 +27,25 @@ export default function OutcomePanel({ roomId }: Props) {
       });
       if (!r.ok) throw new Error("Failed to save");
       setMsg("Outcome saved.");
+      setStatus("success");
     } catch (e) {
       setMsg("Failed to save outcome.");
+      setStatus("error");
     } finally {
       setLoading(false);
     }
   };
 
+  if (role !== "pro") {
+    return (
+      <div className="tt-card">
+        <p className="text-sm text-zinc-600 dark:text-zinc-300">Waiting for pro to submit outcome…</p>
+      </div>
+    );
+  }
+
   return (
     <div className="tt-card space-y-3">
-      {/* TODO: gate panel by role (pro) when auth is added */}
       <div className="space-y-1">
         <label htmlFor="outcome-select" className="text-sm font-medium">Outcome</label>
         <select
@@ -64,7 +76,15 @@ export default function OutcomePanel({ roomId }: Props) {
         <button id="btn-save-outcome" className="tt-btn-primary" onClick={onSave} disabled={loading}>
           {loading ? "Saving…" : "Save outcome"}
         </button>
-        {msg && <span className="text-sm text-zinc-600 dark:text-zinc-300">{msg}</span>}
+        {msg && (
+          <span
+            className={`text-sm ${status === "success" ? "text-green-600" : status === "error" ? "text-red-600" : "text-zinc-600 dark:text-zinc-300"}`}
+            role="status"
+            aria-live="polite"
+          >
+            {msg}
+          </span>
+        )}
       </div>
     </div>
   );

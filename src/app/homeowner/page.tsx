@@ -31,7 +31,7 @@ export default function HomeownerPage() {
       .then((r) => r.json())
       .then((data: { status: "queued" | "paired"; roomId?: string }) => {
         if (data.status === "paired" && data.roomId) {
-          router.push(`/room/${data.roomId}`);
+          router.push(`/room/${data.roomId}?role=homeowner`);
           return;
         }
         // start polling
@@ -50,7 +50,7 @@ export default function HomeownerPage() {
         const data = (await r.json()) as { status: "waiting" | "paired"; roomId?: string };
         if (data.status === "paired" && data.roomId) {
           stopPolling();
-          router.push(`/room/${data.roomId}`);
+          router.push(`/room/${data.roomId}?role=homeowner`);
         }
       });
     }, 2000);
@@ -108,7 +108,13 @@ export default function HomeownerPage() {
               </Button>
               {waitingMsg && (
                 <div className="mt-3 flex items-center justify-between text-sm text-zinc-600 dark:text-zinc-300">
-                  <span>{waitingMsg}</span>
+                  <span className="flex items-center">
+                    <span
+                      className="mr-2 inline-block h-4 w-4 animate-spin rounded-full border-2 border-zinc-400 border-t-transparent"
+                      aria-hidden="true"
+                    />
+                    {waitingMsg}
+                  </span>
                   <button type="button" className="underline" onClick={onCancel}>
                     Cancel
                   </button>
