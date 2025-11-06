@@ -10,6 +10,7 @@ const queues = new Map<Trade, Queue>();
 for (const t of TRADES) queues.set(t, { homeowners: [], pros: [] });
 
 const pairsBySession = new Map<SessionId, Pair>();
+const pairsByRoomId = new Map<string, Pair>();
 
 export function enqueue(role: Role, trade: Trade, sessionId: SessionId) {
   if (pairsBySession.has(sessionId)) return { status: "paired" as const };
@@ -51,6 +52,7 @@ function pair(trade: Trade, a: SessionId, b: SessionId) {
   const p: Pair = { roomId, a, b, trade, createdAt: Date.now() };
   pairsBySession.set(a, p);
   pairsBySession.set(b, p);
+  pairsByRoomId.set(roomId, p);
 }
 
 function removeFromQueues(sessionId: SessionId) {
@@ -65,10 +67,15 @@ export function clearPair(sessionId: SessionId) {
   if (!p) return;
   pairsBySession.delete(p.a);
   pairsBySession.delete(p.b);
+  pairsByRoomId.delete(p.roomId);
 }
 
 export function getPairForSession(sessionId: SessionId): Pair | null {
   return pairsBySession.get(sessionId) ?? null;
+}
+
+export function getPairByRoomId(roomId: string): Pair | null {
+  return pairsByRoomId.get(roomId) ?? null;
 }
 
 

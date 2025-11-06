@@ -1,7 +1,12 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
+import { handleCorsPreflight, withCors } from "@/lib/cors";
 
-export async function GET() {
-  return NextResponse.json(
+export async function GET(req: NextRequest) {
+  const pre = handleCorsPreflight(req);
+  if (pre) return pre;
+  return withCors(
+    req,
+    NextResponse.json(
     {
       ok: true,
       commit: {
@@ -16,8 +21,14 @@ export async function GET() {
       },
       time: new Date().toISOString(),
     },
-    { status: 200 },
+      { status: 200 },
+    ),
   );
+}
+
+export async function OPTIONS(req: NextRequest) {
+  const pre = handleCorsPreflight(req);
+  return pre ?? NextResponse.json(null, { status: 204 });
 }
 
 

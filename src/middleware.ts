@@ -8,12 +8,27 @@ export function middleware(req: NextRequest) {
   const existing = req.cookies.get(COOKIE_NAME)?.value;
   if (!existing) {
     const id = crypto.randomUUID();
+    const requestOrigin = req.headers.get("origin");
+    const allowed = process.env.ALLOWED_ORIGIN || "";
+    let sameSite: "lax" | "none" = "lax";
+    let secure = false;
+    try {
+      if (requestOrigin && allowed) {
+        const reqUrl = new URL(requestOrigin);
+        const allowedUrl = new URL(allowed);
+        if (reqUrl.origin === allowedUrl.origin) {
+          sameSite = "none";
+          secure = true;
+        }
+      }
+    } catch {}
     res.cookies.set({
       name: COOKIE_NAME,
       value: id,
       path: "/",
       httpOnly: true,
-      sameSite: "lax",
+      sameSite,
+      secure,
       maxAge: THIRTY_DAYS_S,
     });
   }

@@ -30,6 +30,20 @@ export function buildAuthOptions(prismaClient?: any): NextAuthOptions {
         }
         return session;
       },
+      async redirect({ url }: { url: string }) {
+        // Only allow redirects to FRONTEND_BASE_URL origin
+        const fallback = process.env.FRONTEND_BASE_URL || "/";
+        try {
+          const target = new URL(url, fallback);
+          const allowed = new URL(fallback);
+          if (target.origin === allowed.origin) {
+            return target.toString();
+          }
+        } catch {
+          // fall through
+        }
+        return fallback;
+      },
     },
     pages: {},
   } satisfies NextAuthOptions;

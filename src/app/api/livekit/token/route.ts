@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
+import { handleCorsPreflight, withCors } from "@/lib/cors";
 
 function b64url(input: Buffer | string) {
   return Buffer.from(input)
@@ -20,22 +21,24 @@ function signHS256(header: object, payload: object, secret: string) {
 const ROOM_RE = /^[A-Za-z0-9_-]{1,64}$/;
 
 export async function POST(req: NextRequest) {
+  const pre = handleCorsPreflight(req);
+  if (pre) return pre;
   const url = process.env.LIVEKIT_URL;
   const apiKey = process.env.LIVEKIT_API_KEY;
   const apiSecret = process.env.LIVEKIT_API_SECRET;
   if (!url || !apiKey || !apiSecret) {
-    return NextResponse.json({ message: "LiveKit env not configured" }, { status: 500 });
+    return withCors(req, NextResponse.json({ message: "LiveKit env not configured" }, { status: 500 }));
   }
 
   let body: unknown;
   try {
     body = await req.json();
   } catch {
-    return NextResponse.json({ message: "invalid json" }, { status: 400 });
+    return withCors(req, NextResponse.json({ message: "invalid json" }, { status: 400 }));
   }
   const { roomId, userLabel } = (body ?? {}) as { roomId?: string; userLabel?: string };
   if (!roomId || !ROOM_RE.test(roomId)) {
-    return NextResponse.json({ message: "invalid roomId" }, { status: 400 });
+    return withCors(req, NextResponse.json({ message: "invalid roomId" }, { status: 400 }));
   }
 
   const session = req.cookies.get("tt_session")?.value || crypto.randomUUID();
@@ -64,7 +67,12 @@ export async function POST(req: NextRequest) {
   } as const;
 
   const token = signHS256(header, payload, apiSecret);
-  return NextResponse.json({ token, url }, { status: 200 });
+  return withCors(req, NextResponse.json({ token, url }, { status: 200 }));
+}
+
+export async function OPTIONS(req: NextRequest) {
+  const pre = handleCorsPreflight(req);
+  return pre ?? NextResponse.json(null, { status: 204 });
 }
 
 
