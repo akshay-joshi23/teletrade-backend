@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import Select from "@/components/ui/Select";
 
 type Props = { roomId: string; role?: "homeowner" | "pro" };
 
@@ -46,20 +47,15 @@ export default function OutcomePanel({ roomId, role }: Props) {
   }
 
   return (
-    <div className="tt-card space-y-3">
+    <div className="space-y-3">
       <div className="space-y-1">
         <label htmlFor="outcome-select" className="text-sm font-medium">Outcome</label>
-        <select
-          id="outcome-select"
-          className="w-full rounded-lg border border-black/15 dark:border-white/20 bg-white dark:bg-zinc-900 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-black/40 dark:focus:ring-white/40"
-          value={outcome}
-          onChange={(e) => setOutcome(e.target.value)}
-        >
+        <Select id="outcome-select" value={outcome} onChange={(e) => setOutcome(e.target.value)}>
           <option value="">Select outcome</option>
           <option value="resolved_remote">Resolved remotely</option>
           <option value="needs_in_person">Needs in-person visit</option>
           <option value="parts_required">Parts required</option>
-        </select>
+        </Select>
       </div>
 
       <div className="space-y-1">
@@ -67,7 +63,7 @@ export default function OutcomePanel({ roomId, role }: Props) {
         <textarea
           id="outcome-notes"
           placeholder="Optional notes (parts list, safety notes, etc.)"
-          className="w-full min-h-24 rounded-lg border border-black/15 dark:border-white/20 bg-white dark:bg-zinc-900 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-black/40 dark:focus:ring-white/40"
+          className="w-full min-h-24 rounded-xl border border-black/10 dark:border-white/15 bg-white dark:bg-zinc-900 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400/60"
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
         />
