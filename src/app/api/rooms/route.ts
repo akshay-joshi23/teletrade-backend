@@ -5,6 +5,27 @@ import { type Trade } from "@/lib/types";
 import crypto from "crypto";
 import { json, error } from "@/lib/cors";
 
+// Normalize role input to canonical "HOMEOWNER" | "PRO"
+function normalizeRole(input: unknown): "HOMEOWNER" | "PRO" | null {
+  const raw = String(input ?? "").trim().toUpperCase();
+
+  if (raw === "HOMEOWNER" || raw === "PRO") return raw as "HOMEOWNER" | "PRO";
+
+  const aliases: Record<string, "HOMEOWNER" | "PRO"> = {
+    HOME_OWNER: "HOMEOWNER",
+    CLIENT: "HOMEOWNER",
+    CUSTOMER: "HOMEOWNER",
+
+    PROFESSIONAL: "PRO",
+    EXPERT: "PRO",
+    TRADESPERSON: "PRO",
+    TRADESMAN: "PRO",
+    TECH: "PRO",
+  };
+
+  return aliases[raw] ?? null;
+}
+
 export async function POST(req: NextRequest) {
   const pre = handleCorsPreflight(req);
   if (pre) return pre;
@@ -15,12 +36,28 @@ export async function POST(req: NextRequest) {
   } catch {
     return error(req, 400, "invalid json");
   }
-  const { role, trade } = (body ?? {}) as { role?: string; trade?: Trade };
-  const R = String(role ?? "").trim().toUpperCase();
-  if (R !== "HOMEOWNER" && R !== "PRO") {
-    return error(req, 400, "role must be HOMEOWNER or PRO");
+  const { trade } = (body ?? {}) as { role?: string; trade?: Trade };
+  // Accept role from multiple keys; prefer "role"
+  const rawRole =
+    (body as any)?.role ??
+    (body as any)?.userRole ??
+    (body as any)?.user_type ??
+    (body as any)?.type ??
+    (body as any)?.who;
+
+  const canonical = normalizeRole(rawRole);
+  if (!canonical) {
+    return json(
+      req,
+      {
+        error: "Invalid role. Use HOMEOWNER or PRO.",
+        received: rawRole ?? null,
+        accepted: ["HOMEOWNER", "PRO"],
+      },
+      { status: 400 },
+    );
   }
-  const normalizedRole: Role = R === "PRO" ? "pro" : "homeowner";
+  const normalizedRole: Role = canonical === "PRO" ? "pro" : "homeowner";
   if (!trade) {
     return error(req, 400, "invalid trade");
   }
