@@ -3,15 +3,33 @@ import { NextRequest, NextResponse } from "next/server";
 const ALLOWED_METHODS = "GET,POST,OPTIONS";
 const ALLOWED_HEADERS = "Content-Type, Authorization";
 
-export function getOrigin(req: NextRequest): string {
-  return req.headers.get("origin") || process.env.ALLOWED_ORIGIN || "*";
+function resolveAllowedOrigin(req: NextRequest): string | null {
+  const requestOrigin = req.headers.get("origin");
+  const configured = (process.env.ALLOWED_ORIGIN || "").split(",").map((s) => s.trim()).filter(Boolean);
+  if (!requestOrigin) return null;
+  if (configured.length === 0) return requestOrigin; // fallback: echo
+  try {
+    const reqOrigin = new URL(requestOrigin).origin;
+    for (const o of configured) {
+      try {
+        if (new URL(o).origin === reqOrigin) return reqOrigin;
+      } catch {
+        // skip invalid configured origins
+      }
+    }
+    return null;
+  } catch {
+    return null;
+  }
 }
 
 export function handleCorsPreflight(req: NextRequest): NextResponse | null {
   if (req.method !== "OPTIONS") return null;
-  const origin = getOrigin(req);
+  const origin = resolveAllowedOrigin(req);
   const res = new NextResponse(null, { status: 204 });
-  res.headers.set("Access-Control-Allow-Origin", origin);
+  if (origin) {
+    res.headers.set("Access-Control-Allow-Origin", origin);
+  }
   res.headers.set("Vary", "Origin");
   res.headers.set("Access-Control-Allow-Credentials", "true");
   res.headers.set("Access-Control-Allow-Methods", ALLOWED_METHODS);
@@ -20,8 +38,10 @@ export function handleCorsPreflight(req: NextRequest): NextResponse | null {
 }
 
 export function withCors(req: NextRequest, res: NextResponse): NextResponse {
-  const origin = getOrigin(req);
-  res.headers.set("Access-Control-Allow-Origin", origin);
+  const origin = resolveAllowedOrigin(req);
+  if (origin) {
+    res.headers.set("Access-Control-Allow-Origin", origin);
+  }
   res.headers.set("Vary", "Origin");
   res.headers.set("Access-Control-Allow-Credentials", "true");
   res.headers.set("Access-Control-Allow-Methods", ALLOWED_METHODS);
