@@ -14,6 +14,10 @@ model User {
   emailVerified   DateTime?
   image           String?
 
+  // Added for onboarding
+  phone           String?
+  serviceLocation String?
+
   role            UserRole @default(HOMEOWNER)
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
@@ -90,6 +94,13 @@ model ProProfile {
   serviceRadiusKm Int?     @default(25)
   availability    Json?
   user            User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Added for onboarding
+  yearsExperience Int?
+  licenseNumber   String?
+  bio             String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 }
 
 enum Trade {
