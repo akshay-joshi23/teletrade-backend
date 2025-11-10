@@ -4,6 +4,8 @@ import { enqueue, poll, type Role } from "@/lib/match";
 import { type Trade } from "@/lib/types";
 import crypto from "crypto";
 import { json, error } from "@/lib/cors";
+import { prisma } from "@/lib/prisma";
+import { createLiveKitRoomIfNeeded, newRoomId } from "@/lib/livekit";
 
 // Normalize role input to canonical "HOMEOWNER" | "PRO"
 function normalizeRole(input: unknown): "HOMEOWNER" | "PRO" | null {
@@ -36,6 +38,63 @@ export async function POST(req: NextRequest) {
   } catch {
     return error(req, 400, "invalid json");
   }
+
+  // New contract: explicit room creation with participants (non-breaking; falls back to matcher if absent)
+  const {
+    homeownerId,
+    homeownerName,
+    professionalId,
+    professionalName,
+    issueType,
+  } = (body ?? {}) as {
+    homeownerId?: string;
+    homeownerName?: string;
+    professionalId?: string;
+    professionalName?: string;
+    issueType?: string;
+  };
+
+  if (homeownerId && professionalId) {
+    // Validate LiveKit envs and create a room id
+    const roomId = newRoomId();
+    try {
+      await createLiveKitRoomIfNeeded(roomId);
+    } catch (e) {
+      return withCors(
+        req,
+        NextResponse.json(
+          { error: "Failed to create LiveKit room", details: (e as Error)?.message ?? String(e) },
+          { status: 500 },
+        ),
+      );
+    }
+
+    // Persist to DB (best effort)
+    try {
+      await prisma.room.create({
+        data: {
+          livekitRoom: roomId,
+          status: "ACTIVE",
+          homeownerId,
+          proId: professionalId,
+        },
+      });
+    } catch {
+      // continue without failing the request
+    }
+
+    // Response per requested shape
+    return json(req, {
+      id: roomId,
+      homeownerId,
+      professionalId,
+      issueType: issueType ?? null,
+      status: "active",
+      createdAt: new Date().toISOString(),
+    });
+  }
+
+  // Existing matcher-based flow (backward compatible)
   const { trade } = (body ?? {}) as { role?: string; trade?: Trade };
   // Accept role from multiple keys; prefer "role"
   const rawRole =

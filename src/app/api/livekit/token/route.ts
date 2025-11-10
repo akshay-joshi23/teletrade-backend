@@ -1,34 +1,23 @@
 import { NextRequest, NextResponse } from "next/server";
-import crypto from "crypto";
+import { getServerSession } from "next-auth";
 import { handleCorsPreflight, withCors } from "@/lib/cors";
+import { authOptions } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
+import { ensureLiveKitEnv, generateJoinToken } from "@/lib/livekit";
 
-function b64url(input: Buffer | string) {
-  return Buffer.from(input)
-    .toString("base64")
-    .replace(/=/g, "")
-    .replace(/\+/g, "-")
-    .replace(/\//g, "_");
-}
-
-function signHS256(header: object, payload: object, secret: string) {
-  const headerB64 = b64url(JSON.stringify(header));
-  const payloadB64 = b64url(JSON.stringify(payload));
-  const data = `${headerB64}.${payloadB64}`;
-  const sig = crypto.createHmac("sha256", secret).update(data).digest("base64").replace(/=/g, "").replace(/\+/g, "-").replace(/\//g, "_");
-  return `${data}.${sig}`;
-}
-
-const ROOM_RE = /^[A-Za-z0-9_-]{1,64}$/;
+const ROOM_RE = /^[A-Za-z0-9_-]{1,128}$/;
 
 export async function POST(req: NextRequest) {
   const pre = handleCorsPreflight(req);
   if (pre) return pre;
-  const url = process.env.LIVEKIT_URL;
-  const apiKey = process.env.LIVEKIT_API_KEY;
-  const apiSecret = process.env.LIVEKIT_API_SECRET;
-  if (!url || !apiKey || !apiSecret) {
-    return withCors(req, NextResponse.json({ message: "LiveKit env not configured" }, { status: 500 }));
+  const { url } = ensureLiveKitEnv();
+
+  // Auth required
+  const session = (await getServerSession(authOptions as any)) as any;
+  if (!session?.user?.id) {
+    return withCors(req, NextResponse.json({ message: "Unauthorized" }, { status: 401 }));
   }
+  const userId = session.user.id as string;
 
   let body: unknown;
   try {
@@ -36,37 +25,43 @@ export async function POST(req: NextRequest) {
   } catch {
     return withCors(req, NextResponse.json({ message: "invalid json" }, { status: 400 }));
   }
-  const { roomId, userLabel } = (body ?? {}) as { roomId?: string; userLabel?: string };
+  const { roomId, role } = (body ?? {}) as { roomId?: string; role?: "HOMEOWNER" | "PRO" };
   if (!roomId || !ROOM_RE.test(roomId)) {
     return withCors(req, NextResponse.json({ message: "invalid roomId" }, { status: 400 }));
   }
 
-  const session = req.cookies.get("tt_session")?.value || crypto.randomUUID();
-  const roleHeader = req.headers.get("x-tt-role");
-  const prefix = roleHeader === "homeowner" ? "HO" : roleHeader === "pro" ? "PRO" : "User";
-  const last4 = session.slice(-4);
-  const identity = `${prefix}-${last4}`;
-  const name = userLabel?.slice(0, 64) || identity;
+  // Verify role constraints
+  const normalizedRole = String(role ?? "").toUpperCase();
+  if (normalizedRole !== "HOMEOWNER" && normalizedRole !== "PRO") {
+    return withCors(req, NextResponse.json({ message: "invalid role" }, { status: 400 }));
+  }
 
-  const now = Math.floor(Date.now() / 1000);
-  const exp = now + 60 * 60; // 1 hour
-  const header = { alg: "HS256", typ: "JWT" };
-  const payload = {
-    iss: apiKey,
-    iat: now,
-    exp,
-    sub: identity,
-    name,
-    video: {
-      room: roomId,
-      roomJoin: true,
-      canPublish: true,
-      canSubscribe: true,
-      canPublishData: true,
-    },
-  } as const;
+  if (normalizedRole === "PRO") {
+    const expected = `pro_${userId}`;
+    if (roomId !== expected) {
+      return withCors(req, NextResponse.json({ message: "forbidden: roomId mismatch" }, { status: 403 }));
+    }
+  } else {
+    // HOMEOWNER must have an ADMITTED request with matching roomId
+    const admitted = await prisma.request.findFirst({
+      where: { homeownerId: userId, status: "ADMITTED" as any, roomId },
+      select: { id: true },
+    });
+    if (!admitted) {
+      return withCors(req, NextResponse.json({ message: "forbidden: not admitted" }, { status: 403 }));
+    }
+  }
 
-  const token = signHS256(header, payload, apiSecret);
+  const identityPrefix = normalizedRole === "PRO" ? "PRO" : "HO";
+  const identity = `${identityPrefix}-${userId}`;
+  const token = generateJoinToken({
+    roomId,
+    identity,
+    name: (session.user.name as string) || identity,
+    canPublish: true,
+    canSubscribe: true,
+  } as any);
+
   return withCors(req, NextResponse.json({ token, url }, { status: 200 }));
 }
 
@@ -74,5 +69,4 @@ export async function OPTIONS(req: NextRequest) {
   const pre = handleCorsPreflight(req);
   return pre ?? NextResponse.json(null, { status: 204 });
 }
-
 
