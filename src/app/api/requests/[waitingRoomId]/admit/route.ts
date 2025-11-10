@@ -4,6 +4,10 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { handleCorsPreflight, json, error } from "@/lib/cors";
 import { createLiveKitRoomIfNeeded } from "@/lib/livekit";
+import { USE_MOCKS } from "@/lib/env";
+import { mockStore } from "@/lib/mockStore";
+
+export const runtime = "nodejs";
 
 export async function OPTIONS(req: NextRequest) {
   return handleCorsPreflight(req) ?? NextResponse.json(null, { status: 204 });
@@ -28,26 +32,37 @@ export async function POST(req: NextRequest, ctx: { params: { waitingRoomId: str
 
   const roomId = `pro_${proId}`;
 
-  // Enforce single-admit via updateMany guard on OPEN status
-  const result = await prisma.$transaction(async (tx) => {
-    const updated = await tx.request.updateMany({
-      where: { waitingRoomId, status: "OPEN" as any },
-      data: { status: "ADMITTED" as any, proId, roomId },
+  if (!USE_MOCKS) {
+    // Enforce single-admit via updateMany guard on OPEN status
+    const result = await prisma.$transaction(async (tx) => {
+      const updated = await tx.request.updateMany({
+        where: { waitingRoomId, status: "OPEN" as any },
+        data: { status: "ADMITTED" as any, proId, roomId },
+      });
+      if (updated.count === 0) {
+        // Read current to decide 404 vs 409
+        const existing = await tx.request.findUnique({ where: { waitingRoomId }, select: { status: true } });
+        if (!existing) return { type: "not_found" } as const;
+        return { type: "conflict" } as const;
+      }
+      return { type: "ok" } as const;
     });
-    if (updated.count === 0) {
-      // Read current to decide 404 vs 409
-      const existing = await tx.request.findUnique({ where: { waitingRoomId }, select: { status: true } });
-      if (!existing) return { type: "not_found" } as const;
-      return { type: "conflict" } as const;
-    }
-    return { type: "ok" } as const;
-  });
 
-  if (result.type === "not_found") {
-    return error(req, 404, "not found");
-  }
-  if (result.type === "conflict") {
-    return json(req, { error: "already admitted" }, { status: 409 });
+    if (result.type === "not_found") {
+      return error(req, 404, "not found");
+    }
+    if (result.type === "conflict") {
+      return json(req, { error: "already admitted" }, { status: 409 });
+    }
+  } else {
+    const existing = mockStore.joinRequests.get(waitingRoomId);
+    if (!existing) return error(req, 404, "not found");
+    if (existing.status !== "OPEN") return json(req, { error: "already admitted" }, { status: 409 });
+    existing.status = "ADMITTED";
+    existing.proId = proId;
+    existing.roomId = roomId;
+    existing.updatedAt = Date.now();
+    mockStore.joinRequests.set(waitingRoomId, existing);
   }
 
   // Ensure LiveKit room exists

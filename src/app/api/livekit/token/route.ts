@@ -4,8 +4,12 @@ import { handleCorsPreflight, withCors } from "@/lib/cors";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { ensureLiveKitEnv, generateJoinToken } from "@/lib/livekit";
+import { USE_MOCKS } from "@/lib/env";
+import { mockStore } from "@/lib/mockStore";
 
 const ROOM_RE = /^[A-Za-z0-9_-]{1,128}$/;
+
+export const runtime = "nodejs";
 
 export async function POST(req: NextRequest) {
   const pre = handleCorsPreflight(req);
@@ -43,12 +47,21 @@ export async function POST(req: NextRequest) {
     }
   } else {
     // HOMEOWNER must have an ADMITTED request with matching roomId
-    const admitted = await prisma.request.findFirst({
-      where: { homeownerId: userId, status: "ADMITTED" as any, roomId },
-      select: { id: true },
-    });
-    if (!admitted) {
-      return withCors(req, NextResponse.json({ message: "forbidden: not admitted" }, { status: 403 }));
+    if (!USE_MOCKS) {
+      const admitted = await prisma.request.findFirst({
+        where: { homeownerId: userId, status: "ADMITTED" as any, roomId },
+        select: { id: true },
+      });
+      if (!admitted) {
+        return withCors(req, NextResponse.json({ message: "forbidden: not admitted" }, { status: 403 }));
+      }
+    } else {
+      const admitted = [...mockStore.joinRequests.values()].some(
+        (r) => r.homeownerId === userId && r.status === "ADMITTED" && r.roomId === roomId,
+      );
+      if (!admitted) {
+        return withCors(req, NextResponse.json({ message: "forbidden: not admitted" }, { status: 403 }));
+      }
     }
   }
 

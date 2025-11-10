@@ -4,4 +4,8 @@ export function getBrowserLiveKitUrl(): string {
   return url;
 }
 
+export const USE_MOCKS = process.env.USE_MOCKS === "1";
+
+export const USE_MOCKS = process.env.USE_MOCKS === "1";
+
 
