@@ -8,9 +8,9 @@ import { useRouter } from "next/navigation";
 import { getApiBase } from "@/lib/apiBase";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
-const API_BASE = getApiBase();
 
 export default function HomeownerPage() {
+  const API_BASE = getApiBase();
   const router = useRouter();
   const [selectedTrade, setSelectedTrade] = useState<Trade | "">("");
   const [zip, setZip] = useState<string>("");

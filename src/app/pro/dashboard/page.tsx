@@ -4,13 +4,13 @@ import { useRouter } from "next/navigation";
 import { getApiBase } from "@/lib/apiBase";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
-const API_BASE = getApiBase();
 
 type Trade = "PLUMBING" | "ELECTRICAL" | "HVAC" | "GENERAL";
 type OpenRequest = { id: string; trade: Trade; note?: string; createdAt: number };
 
 async function startHostSession(): Promise<{ roomId: string }> {
-  const res = await fetch(`${API_BASE}/api/host/session`, {
+  const base = getApiBase();
+  const res = await fetch(`${base}/api/host/session`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
   });
@@ -22,7 +22,8 @@ async function fetchOpenRequests(trade?: Trade) {
   const qs = new URLSearchParams();
   qs.set("status", "OPEN");
   if (trade) qs.set("trade", trade);
-  const res = await fetch(`${API_BASE}/api/requests?${qs.toString()}`, {
+  const base = getApiBase();
+  const res = await fetch(`${base}/api/requests?${qs.toString()}`, {
     method: "GET",
   });
   if (!res.ok) throw new Error(`fetchOpenRequests failed: ${res.status}`);
@@ -30,7 +31,8 @@ async function fetchOpenRequests(trade?: Trade) {
 }
 
 async function admitRequest(id: string): Promise<{ roomId: string }> {
-  const res = await fetch(`${API_BASE}/api/requests/${id}/admit`, {
+  const base = getApiBase();
+  const res = await fetch(`${base}/api/requests/${id}/admit`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ role: "PRO" }),
@@ -48,7 +50,7 @@ export default function ProDashboardPage() {
   const pollRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
-    console.info("[pro] API_BASE =", API_BASE);
+    console.info("[pro] API_BASE =", getApiBase());
   }, []);
 
   const startPolling = () => {

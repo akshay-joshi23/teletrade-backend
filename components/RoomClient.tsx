@@ -10,7 +10,6 @@ import {
 } from "@livekit/components-react";
 import { Track } from "livekit-client";
 import { getApiBase } from "@/lib/apiBase";
-const API_BASE = getApiBase();
 
 type Props = { roomId: string; role: "homeowner" | "pro" };
 
@@ -34,6 +33,7 @@ export default function RoomClient({ roomId, role }: Props) {
   useEffect(() => {
     (async () => {
       try {
+        const API_BASE = getApiBase();
         // 1) Resolve LiveKit URL for the browser
         const envUrl = process.env.NEXT_PUBLIC_LIVEKIT_URL;
         if (envUrl) {

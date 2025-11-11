@@ -2,7 +2,6 @@
 import { useState } from "react";
 import Select from "@/components/ui/Select";
 import { getApiBase } from "@/lib/apiBase";
-const API_BASE = getApiBase();
 
 type Props = { roomId: string; role?: "homeowner" | "pro" };
 
@@ -19,6 +18,7 @@ export default function OutcomePanel({ roomId, role }: Props) {
       setStatus("error");
       return;
     }
+    const API_BASE = getApiBase();
     setLoading(true);
     setMsg("");
     setStatus("idle");

@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import type { Room } from "livekit-client";
 import { Track } from "livekit-client";
 import { getApiBase } from "@/lib/apiBase";
-const API_BASE = getApiBase();
 
 type Props = { roomId: string; role?: "homeowner" | "pro" };
 
@@ -18,6 +17,7 @@ export default function VideoRoom({ roomId, role }: Props) {
   useEffect(() => {
     let active = true;
     setLoading(true);
+    const API_BASE = getApiBase();
     // Pre-warm permissions so camera/mic prompts happen before LiveKit joins.
     // This reduces initial black tiles; ignore if blocked.
     try {

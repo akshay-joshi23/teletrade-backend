@@ -7,9 +7,9 @@ import { useRouter } from "next/navigation";
 import { getApiBase } from "@/lib/apiBase";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
-const API_BASE = getApiBase();
 
 export default function ProPage() {
+  const API_BASE = getApiBase();
   const [available, setAvailable] = useState<boolean>(false);
   const [selectedTrade, setSelectedTrade] = useState<Trade | "">("");
   const [statusMsg, setStatusMsg] = useState<string>("");
