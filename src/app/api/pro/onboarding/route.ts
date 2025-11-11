@@ -93,10 +93,10 @@ export async function POST(req: NextRequest) {
         licenseNumber: licenseNumber || null,
         bio: bio || null,
       },
-      select: { id: true },
+      select: { userId: true },
     });
 
-    return json(req, { ok: true, userId: user.id, profileId: profile.id }, { status: 200 });
+    return json(req, { ok: true, userId: user.id, profileId: profile.userId }, { status: 200 });
   } catch (err: unknown) {
     console.error("pro/onboarding error", err);
     return json(req, { error: "Server error" }, { status: 500 });

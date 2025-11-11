@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "prebuild": "npm ls zod || (echo 'zod missing' && exit 1)",
     "start": "next start",
     "lint": "next lint",
     "prisma": "prisma",
