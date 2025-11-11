@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
-import { handleCorsPreflight, json, error } from "@/lib/cors";
+import { handleCorsPreflight, json } from "@/lib/cors";
 import { createLiveKitRoomIfNeeded, ensureLiveKitEnv, generateJoinToken } from "@/lib/livekit";
 import { USE_MOCKS } from "@/lib/env";
 import { mockStore, type MockHostSession } from "@/lib/mockStore";
@@ -16,17 +14,9 @@ export async function OPTIONS(req: NextRequest) {
 export async function POST(req: NextRequest) {
   const pre = handleCorsPreflight(req);
   if (pre) return pre;
-  const session = (await getServerSession(authOptions as any)) as any;
-  if (!session?.user?.id) {
-    return error(req, 401, "Unauthorized");
-  }
-  const userId = session.user.id as string;
-  // require PRO
-  // Load from DB would be stronger; we trust session.role if present
-  const role = (session.user as any)?.role;
-  if (role && role !== "PRO") {
-    return error(req, 403, "Only pros can start a host session");
-  }
+  // Temporary: allow unauthenticated usage for connectivity testing
+  // Prefer provided header, else fixed fallback
+  const userId = (req.headers.get("x-pro-id") || "public-pro").trim();
 
   const roomId = `pro_${userId}`;
   if (!USE_MOCKS) {
@@ -50,7 +40,7 @@ export async function POST(req: NextRequest) {
   const token = generateJoinToken({
     roomId,
     identity: `PRO-${userId}`,
-    name: session.user.name || `Pro ${userId.slice(-4)}`,
+    name: `Pro ${userId.slice(-4)}`,
     // host privileges
     canPublish: true,
     canSubscribe: true,
