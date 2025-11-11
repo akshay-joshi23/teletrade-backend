@@ -5,6 +5,7 @@ import { ZipInput } from "@/components/ZipInput";
 import Button from "@/components/ui/Button";
 import { type Trade, ZIP_REGEX } from "@/lib/types";
 import { useRouter } from "next/navigation";
+import { API_BASE } from "@/lib/apiBase";
 
 export default function HomeownerPage() {
   const router = useRouter();
@@ -46,7 +47,7 @@ export default function HomeownerPage() {
   const startPolling = () => {
     if (pollRef.current) return;
     pollRef.current = setInterval(() => {
-      fetch("/api/match/poll").then(async (r) => {
+      fetch(`${API_BASE}/api/match/poll`).then(async (r) => {
         const data = (await r.json()) as { status: "waiting" | "paired"; roomId?: string };
         if (data.status === "paired" && data.roomId) {
           stopPolling();
@@ -63,12 +64,16 @@ export default function HomeownerPage() {
     }
   };
 
-  useEffect(() => () => stopPolling(), []);
+  useEffect(() => {
+    console.info("NEXT_PUBLIC_BACKEND_URL =", process.env.NEXT_PUBLIC_BACKEND_URL);
+    console.info("API_BASE (client) =", API_BASE);
+    return () => stopPolling();
+  }, []);
 
   const onCancel = () => {
     stopPolling();
     setWaitingMsg("");
-    fetch("/api/match/leave", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ role: "homeowner", trade: selectedTrade || undefined }) });
+    fetch(`${API_BASE}/api/match/leave`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ role: "homeowner", trade: selectedTrade || undefined }) });
   };
 
   return (

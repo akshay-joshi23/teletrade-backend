@@ -1,11 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
 import crypto from "crypto";
-import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { error, handleCorsPreflight, json, withCors } from "@/lib/cors";
 import { mockStore, type MockJoinRequest } from "@/lib/mockStore";
 import { USE_MOCKS } from "@/lib/env";
+import { z } from "zod";
 
 export const runtime = "nodejs";
 
@@ -26,30 +25,27 @@ export async function OPTIONS(req: NextRequest) {
 export async function POST(req: NextRequest) {
   const pre = handleCorsPreflight(req);
   if (pre) return pre;
-  const session = (await getServerSession(authOptions as any)) as any;
-
-  // Optional role check: only homeowners
-  let body: unknown;
-  try {
-    body = await req.json();
-  } catch {
-    return error(req, 400, "invalid json");
+  const body = await req.json().catch(() => ({}));
+  const schema = z.object({
+    trade: z.enum(["PLUMBING", "ELECTRICAL", "HVAC", "GENERAL"]),
+    note: z.string().max(5000).optional(),
+  });
+  const parsed = schema.safeParse(body);
+  if (!parsed.success) {
+    return json(req, { error: "Invalid input", issues: parsed.error.issues }, { status: 422 });
   }
 
   // Real backend path (Prisma)
   try {
     if (!USE_MOCKS) {
-      if (!session?.user?.id) return error(req, 401, "Unauthorized");
-      const userId = session.user.id as string;
-      const user = await prisma.user.findUnique({ where: { id: userId }, select: { role: true } });
-      if (!user || (user.role as any) === "PRO") {
-        return error(req, 403, "Only homeowners can create requests");
-      }
-      const tradeMapped = mapIncomingTrade((body as any)?.trade);
+      // Public: derive homeowner id from anonymous session cookie or random
+      const cookieId = req.cookies.get("tt_session")?.value;
+      const userId = cookieId ?? crypto.randomUUID();
+      const tradeMapped = mapIncomingTrade(parsed.data.trade);
       if (!tradeMapped) {
         return json(req, { error: "Invalid trade" }, { status: 400 });
       }
-      const note = (body as any)?.note ? String((body as any)?.note).slice(0, 5000) : null;
+      const note = parsed.data.note ?? null;
 
       const waitingRoomId = crypto.randomUUID();
       await prisma.request.create({
@@ -68,16 +64,14 @@ export async function POST(req: NextRequest) {
   }
 
   // Mock fallback
-  const trade = String((body as any)?.trade ?? "");
-  if (!trade) return json(req, { error: "trade required" }, { status: 400 });
   const waitingRoomId = crypto.randomUUID();
   const now = Date.now();
-  const homeownerId = (session?.user?.id as string) || (body as any)?.homeownerId || "mock-homeowner";
+  const homeownerId = req.cookies.get("tt_session")?.value || "mock-homeowner";
   const mock: MockJoinRequest = {
     id: waitingRoomId,
     homeownerId,
-    trade: trade as any,
-    note: (body as any)?.note,
+    trade: parsed.success ? (parsed.data.trade as any) : "GENERAL",
+    note: parsed.success ? parsed.data.note : undefined,
     status: "OPEN",
     createdAt: now,
     updatedAt: now,

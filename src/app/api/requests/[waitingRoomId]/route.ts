@@ -1,10 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { handleCorsPreflight, json, withCors, error } from "@/lib/cors";
 import { USE_MOCKS } from "@/lib/env";
 import { mockStore } from "@/lib/mockStore";
+import { z } from "zod";
 
 export const runtime = "nodejs";
 
@@ -15,11 +14,14 @@ export async function OPTIONS(req: NextRequest) {
 export async function GET(req: NextRequest, ctx: { params: { waitingRoomId: string } }) {
   const pre = handleCorsPreflight(req);
   if (pre) return pre;
-  const session = (await getServerSession(authOptions as any)) as any;
-  if (!session?.user?.id && !USE_MOCKS) return error(req, 401, "Unauthorized");
   const waitingRoomId = ctx.params.waitingRoomId;
   if (!waitingRoomId) {
     return error(req, 400, "invalid waitingRoomId");
+  }
+  const idSchema = z.string().min(1).max(128);
+  const idRes = idSchema.safeParse(waitingRoomId);
+  if (!idRes.success) {
+    return json(req, { error: "Invalid id", issues: idRes.error.issues }, { status: 422 });
   }
   try {
     if (!USE_MOCKS) {
