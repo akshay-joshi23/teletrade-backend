@@ -4,7 +4,8 @@ import { LiveKitRoom, GridLayout, ParticipantTile, useRoomContext, useTracks, Ro
 import { useRouter } from "next/navigation";
 import type { Room } from "livekit-client";
 import { Track } from "livekit-client";
-import { API_BASE } from "@/lib/apiBase";
+import { getApiBase } from "@/lib/apiBase";
+const API_BASE = getApiBase();
 
 type Props = { roomId: string; role?: "homeowner" | "pro" };
 

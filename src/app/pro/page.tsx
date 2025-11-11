@@ -4,7 +4,10 @@ import AvailabilityToggle from "@/components/AvailabilityToggle";
 import { TradePicker } from "@/components/TradePicker";
 import { type Trade } from "@/lib/types";
 import { useRouter } from "next/navigation";
-import { API_BASE } from "@/lib/apiBase";
+import { getApiBase } from "@/lib/apiBase";
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+const API_BASE = getApiBase();
 
 export default function ProPage() {
   const [available, setAvailable] = useState<boolean>(false);

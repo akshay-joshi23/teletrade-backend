@@ -5,7 +5,10 @@ import { ZipInput } from "@/components/ZipInput";
 import Button from "@/components/ui/Button";
 import { type Trade, ZIP_REGEX } from "@/lib/types";
 import { useRouter } from "next/navigation";
-import { API_BASE } from "@/lib/apiBase";
+import { getApiBase } from "@/lib/apiBase";
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+const API_BASE = getApiBase();
 
 export default function HomeownerPage() {
   const router = useRouter();

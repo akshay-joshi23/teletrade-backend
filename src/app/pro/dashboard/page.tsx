@@ -1,7 +1,10 @@
 "use client";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { API_BASE } from "@/lib/apiBase";
+import { getApiBase } from "@/lib/apiBase";
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+const API_BASE = getApiBase();
 
 type Trade = "PLUMBING" | "ELECTRICAL" | "HVAC" | "GENERAL";
 type OpenRequest = { id: string; trade: Trade; note?: string; createdAt: number };

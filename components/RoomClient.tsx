@@ -9,7 +9,8 @@ import {
   ControlBar,
 } from "@livekit/components-react";
 import { Track } from "livekit-client";
-import { API_BASE } from "@/lib/apiBase";
+import { getApiBase } from "@/lib/apiBase";
+const API_BASE = getApiBase();
 
 type Props = { roomId: string; role: "homeowner" | "pro" };
 

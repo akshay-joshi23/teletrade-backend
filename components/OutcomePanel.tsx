@@ -1,7 +1,8 @@
 "use client";
 import { useState } from "react";
 import Select from "@/components/ui/Select";
-import { API_BASE } from "@/lib/apiBase";
+import { getApiBase } from "@/lib/apiBase";
+const API_BASE = getApiBase();
 
 type Props = { roomId: string; role?: "homeowner" | "pro" };
 
