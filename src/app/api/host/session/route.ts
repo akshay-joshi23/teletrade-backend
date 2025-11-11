@@ -4,6 +4,7 @@ import { createLiveKitRoomIfNeeded, ensureLiveKitEnv, generateJoinToken } from "
 import { USE_MOCKS } from "@/lib/env";
 import { mockStore, type MockHostSession } from "@/lib/mockStore";
 import crypto from "crypto";
+import { z } from "zod";
 
 export const runtime = "nodejs";
 
@@ -17,8 +18,31 @@ export async function POST(req: NextRequest) {
   // Temporary: allow unauthenticated usage for connectivity testing
   // Prefer provided header, else fixed fallback
   const userId = (req.headers.get("x-pro-id") || "public-pro").trim();
+  const schema = z.object({
+    role: z.string().optional(),
+    roomName: z.string().min(1).max(128).optional(),
+  });
+  let parsed: z.infer<typeof schema> | null = null;
+  try {
+    const body = await req.json().catch(() => ({}));
+    const r = schema.safeParse(body);
+    if (!r.success) {
+      return json(req, { error: "Invalid host session payload", issues: r.error.issues }, { status: 422 });
+    }
+    parsed = r.data;
+  } catch {
+    // ignore, parsed remains null
+  }
+  // Log minimal diagnostics (no secrets)
+  try {
+    console.log("[host/session] request", {
+      userId,
+      body: parsed,
+      mock: USE_MOCKS,
+    });
+  } catch {}
 
-  const roomId = `pro_${userId}`;
+  const roomId = parsed?.roomName || `pro_${userId}`;
   if (!USE_MOCKS) {
     try {
       await createLiveKitRoomIfNeeded(roomId);
