@@ -10,7 +10,10 @@ export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 export default function HomeownerPage() {
-  const API_BASE = getApiBase();
+  const [API_BASE, setApiBase] = useState<string>("");
+  useEffect(() => {
+    setApiBase(getApiBase());
+  }, []);
   const router = useRouter();
   const [selectedTrade, setSelectedTrade] = useState<Trade | "">("");
   const [zip, setZip] = useState<string>("");

@@ -8,41 +8,45 @@ export const revalidate = 0;
 type Trade = "PLUMBING" | "ELECTRICAL" | "HVAC" | "GENERAL";
 type OpenRequest = { id: string; trade: Trade; note?: string; createdAt: number };
 
-async function startHostSession(): Promise<{ roomId: string }> {
-  const base = getApiBase();
-  const res = await fetch(`${base}/api/host/session`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-  });
-  if (!res.ok) throw new Error(`startHostSession failed: ${res.status}`);
-  return res.json();
-}
+function makeApi(base: string) {
+  return {
+    async startHostSession(): Promise<{ roomId: string }> {
+      const res = await fetch(`${base}/api/host/session`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      });
+      if (!res.ok) throw new Error(`startHostSession failed: ${res.status}`);
+      return res.json();
+    },
 
-async function fetchOpenRequests(trade?: Trade) {
-  const qs = new URLSearchParams();
-  qs.set("status", "OPEN");
-  if (trade) qs.set("trade", trade);
-  const base = getApiBase();
-  const res = await fetch(`${base}/api/requests?${qs.toString()}`, {
-    method: "GET",
-  });
-  if (!res.ok) throw new Error(`fetchOpenRequests failed: ${res.status}`);
-  return res.json() as Promise<OpenRequest[]>;
-}
+    async fetchOpenRequests(trade?: Trade) {
+      const qs = new URLSearchParams();
+      qs.set("status", "OPEN");
+      if (trade) qs.set("trade", trade);
+      const res = await fetch(`${base}/api/requests?${qs.toString()}`, {
+        method: "GET",
+      });
+      if (!res.ok) throw new Error(`fetchOpenRequests failed: ${res.status}`);
+      return res.json() as Promise<OpenRequest[]>;
+    },
 
-async function admitRequest(id: string): Promise<{ roomId: string }> {
-  const base = getApiBase();
-  const res = await fetch(`${base}/api/requests/${id}/admit`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ role: "PRO" }),
-  });
-  if (!res.ok) throw new Error(`admitRequest failed: ${res.status}`);
-  return res.json();
+    async admitRequest(id: string): Promise<{ roomId: string }> {
+      const res = await fetch(`${base}/api/requests/${id}/admit`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ role: "PRO" }),
+      });
+      if (!res.ok) throw new Error(`admitRequest failed: ${res.status}`);
+      return res.json();
+    },
+  };
 }
 
 export default function ProDashboardPage() {
   const router = useRouter();
+  const [API_BASE, setApiBase] = useState<string>("");
+  useEffect(() => { setApiBase(getApiBase()); }, []);
+  const api = useMemo(() => makeApi(API_BASE || ""), [API_BASE]);
   const [requests, setRequests] = useState<OpenRequest[]>([]);
   const [trade, setTrade] = useState<Trade | "">("");
   const [roomId, setRoomId] = useState<string | null>(null);
@@ -50,14 +54,14 @@ export default function ProDashboardPage() {
   const pollRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
-    console.info("[pro] API_BASE =", getApiBase());
+    console.info("[pro] API_BASE =", API_BASE);
   }, []);
 
   const startPolling = () => {
     if (pollRef.current) return;
     pollRef.current = setInterval(async () => {
       try {
-        const data = await fetchOpenRequests(trade || undefined);
+        const data = await api.fetchOpenRequests(trade || undefined);
         setRequests(data);
       } catch (e) {
         // ignore transient errors
@@ -77,7 +81,7 @@ export default function ProDashboardPage() {
 
   const onStart = async () => {
     try {
-      const { roomId } = await startHostSession();
+      const { roomId } = await api.startHostSession();
       setRoomId(roomId);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to start session");
@@ -85,7 +89,7 @@ export default function ProDashboardPage() {
   };
   const onAdmit = async (id: string) => {
     try {
-      const { roomId } = await admitRequest(id);
+      const { roomId } = await api.admitRequest(id);
       router.push(`/room/${roomId}?role=PRO`);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to admit");

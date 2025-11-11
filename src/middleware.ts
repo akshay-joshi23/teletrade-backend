@@ -4,15 +4,7 @@ const COOKIE_NAME = "tt_session";
 const THIRTY_DAYS_S = 60 * 60 * 24 * 30;
 
 export function middleware(req: NextRequest) {
-  const path = req.nextUrl.pathname;
-  // Only /api/* is allowed; everything else returns JSON 404
-  if (!path.startsWith("/api")) {
-    return new NextResponse(JSON.stringify({ error: "Not Found" }), {
-      status: 404,
-      headers: { "Content-Type": "application/json" },
-    });
-  }
-  // For API requests, ensure an anonymous session cookie exists
+  // This middleware runs only for /api/* (see matcher below)
   const res = NextResponse.next();
   const existing = req.cookies.get(COOKIE_NAME)?.value;
   if (!existing) {
@@ -52,7 +44,8 @@ export function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!api|_next|favicon.ico|robots.txt|sitemap.xml|.*\\.(?:css|js|png|jpg|jpeg|gif|svg|webp|ico)).*)"],
+  // IMPORTANT: only match /api/*
+  matcher: ["/api/:path*"],
 };
 
 

@@ -9,7 +9,10 @@ export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 export default function ProPage() {
-  const API_BASE = getApiBase();
+  const [API_BASE, setApiBase] = useState<string>("");
+  useEffect(() => {
+    setApiBase(getApiBase());
+  }, []);
   const [available, setAvailable] = useState<boolean>(false);
   const [selectedTrade, setSelectedTrade] = useState<Trade | "">("");
   const [statusMsg, setStatusMsg] = useState<string>("");
