@@ -9,6 +9,7 @@ import {
   ControlBar,
 } from "@livekit/components-react";
 import { Track } from "livekit-client";
+import { API_BASE } from "@/lib/apiBase";
 
 type Props = { roomId: string; role: "homeowner" | "pro" };
 
@@ -38,7 +39,7 @@ export default function RoomClient({ roomId, role }: Props) {
           console.log("[Room] Using NEXT_PUBLIC_LIVEKIT_URL:", envUrl);
           setServerUrl(envUrl);
         } else {
-          const cfg = await fetch("/api/livekit/config").then((r) => r.json());
+          const cfg = await fetch(`${API_BASE}/api/livekit/config`).then((r) => r.json());
           console.log("[Room] /api/livekit/config:", cfg);
           if (!cfg?.ok || !cfg?.serverUrl) {
             throw new Error("NEXT_PUBLIC_LIVEKIT_URL is missing and /api/livekit/config returned no URL");
@@ -54,11 +55,10 @@ export default function RoomClient({ roomId, role }: Props) {
         }
 
         const headers: Record<string, string> = { "Content-Type": "application/json" };
-        headers["x-tt-role"] = role;
-        const resp = await fetch("/api/livekit/token", {
+        const resp = await fetch(`${API_BASE}/api/livekit/token`, {
           method: "POST",
           headers,
-          body: JSON.stringify({ roomId }),
+          body: JSON.stringify({ roomId, role: role === "pro" ? "PRO" : "HOMEOWNER" }),
         });
         if (!resp.ok) throw new Error(`Token fetch failed: ${resp.status}`);
         const data = (await resp.json()) as { token?: string; url?: string; message?: string };

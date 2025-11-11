@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import Select from "@/components/ui/Select";
+import { API_BASE } from "@/lib/apiBase";
 
 type Props = { roomId: string; role?: "homeowner" | "pro" };
 
@@ -21,7 +22,7 @@ export default function OutcomePanel({ roomId, role }: Props) {
     setMsg("");
     setStatus("idle");
     try {
-      const r = await fetch("/api/room/outcome", {
+      const r = await fetch(`${API_BASE}/api/room/outcome`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ roomId, outcome, notes }),

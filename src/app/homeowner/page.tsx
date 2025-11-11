@@ -24,9 +24,10 @@ export default function HomeownerPage() {
   const onConsult = () => {
     if (!validate()) return;
     setWaitingMsg("Waiting for an available pro…");
-    fetch("/api/match/enqueue", {
+    fetch(`${API_BASE}/api/match/enqueue`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
+      credentials: "omit",
       body: JSON.stringify({ role: "homeowner", trade: selectedTrade }),
     })
       .then((r) => r.json())

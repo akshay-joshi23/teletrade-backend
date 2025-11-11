@@ -4,6 +4,7 @@ import { LiveKitRoom, GridLayout, ParticipantTile, useRoomContext, useTracks, Ro
 import { useRouter } from "next/navigation";
 import type { Room } from "livekit-client";
 import { Track } from "livekit-client";
+import { API_BASE } from "@/lib/apiBase";
 
 type Props = { roomId: string; role?: "homeowner" | "pro" };
 
@@ -26,11 +27,10 @@ export default function VideoRoom({ roomId, role }: Props) {
       }
     } catch {}
     const headers: Record<string, string> = { "Content-Type": "application/json" };
-    if (role) headers["x-tt-role"] = role;
-    fetch("/api/livekit/token", {
+    fetch(`${API_BASE}/api/livekit/token`, {
       method: "POST",
       headers,
-      body: JSON.stringify({ roomId }),
+      body: JSON.stringify({ roomId, role: (role === "pro" ? "PRO" : "HOMEOWNER") }),
     })
       .then(async (r) => {
         if (!active) return;

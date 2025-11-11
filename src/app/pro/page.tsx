@@ -4,6 +4,7 @@ import AvailabilityToggle from "@/components/AvailabilityToggle";
 import { TradePicker } from "@/components/TradePicker";
 import { type Trade } from "@/lib/types";
 import { useRouter } from "next/navigation";
+import { API_BASE } from "@/lib/apiBase";
 
 export default function ProPage() {
   const [available, setAvailable] = useState<boolean>(false);
@@ -22,7 +23,7 @@ export default function ProPage() {
   const startPolling = useCallback(() => {
     if (pollRef.current) return;
     pollRef.current = setInterval(() => {
-      fetch("/api/match/poll").then(async (r) => {
+      fetch(`${API_BASE}/api/match/poll`, { credentials: "omit" }).then(async (r) => {
         const data = (await r.json()) as { status: "waiting" | "paired"; roomId?: string };
         if (data.status === "paired" && data.roomId) {
           stopPolling();
@@ -38,7 +39,7 @@ export default function ProPage() {
     if (!available) {
       setStatusMsg("");
       stopPolling();
-      fetch("/api/match/leave", { method: "POST" });
+      fetch(`${API_BASE}/api/match/leave`, { method: "POST", credentials: "omit" });
       return;
     }
     if (!selectedTrade) {
@@ -46,9 +47,10 @@ export default function ProPage() {
       return;
     }
     setStatusMsg("You’re available. Waiting for a homeowner…");
-    fetch("/api/match/enqueue", {
+    fetch(`${API_BASE}/api/match/enqueue`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
+      credentials: "omit",
       body: JSON.stringify({ role: "pro", trade: selectedTrade }),
     })
       .then((r) => r.json())
