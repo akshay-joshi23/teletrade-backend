@@ -159,6 +159,33 @@ export const openapiSpec = {
         },
       },
     },
+    "/api/auth/google": {
+      get: {
+        summary: "Start Google OAuth",
+        description: "Redirects to Google's OAuth 2.0 consent screen with state including callbackUrl.",
+        parameters: [
+          {
+            name: "callbackUrl",
+            in: "query",
+            required: false,
+            schema: { type: "string" },
+            description: "Frontend URL to return to after successful sign-in.",
+          },
+          {
+            name: "role",
+            in: "query",
+            required: false,
+            schema: { type: "string", enum: ["HOMEOWNER", "PRO"] },
+            description: "Optional role hint to round-trip via state.",
+          },
+        ],
+        responses: {
+          "302": {
+            description: "Redirects to Google OAuth consent screen",
+          },
+        },
+      },
+    },
     "/api/auth/callback/google": {
       get: {
         summary: "Google OAuth callback",

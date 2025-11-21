@@ -58,6 +58,24 @@ LIVEKIT_API_SECRET=YOUR_API_SECRET
 
 Note: never commit real secrets. `.env.example` lists required variables.
 
+### Google OAuth (backend endpoints)
+
+Endpoints:
+- `GET /api/auth/google` — redirects to Google OAuth. Accepts optional `callbackUrl` and `role` query params. They are round-tripped via `state`.
+- `GET /api/auth/callback/google` — handles Google redirect, exchanges `code`, upserts the user, issues a JWT, and redirects back to the provided `callbackUrl` (or `${FRONTEND_BASE_URL}/auth/callback`) with:
+  - `token`: a signed JWT (HS256) containing at least `sub` (user id) and `email`
+  - `user`: URL-encoded JSON string of basic user info
+
+Required environment variables:
+- `GOOGLE_CLIENT_ID`
+- `GOOGLE_CLIENT_SECRET`
+- `FRONTEND_BASE_URL` (e.g., `https://teletrade-frontend.vercel.app`)
+- `JWT_SECRET` (used to sign the returned JWT)
+
+Notes:
+- The callback only redirects to URLs with the same origin as `FRONTEND_BASE_URL`. If an invalid `callbackUrl` is provided, it falls back to `${FRONTEND_BASE_URL}/auth/callback`.
+- For persistence, set `DATABASE_URL` to enable Prisma and persist Users/Accounts.
+
 ### Post-call outcome (in-memory)
 
 - Pro can save an outcome and optional notes during/after the call.
